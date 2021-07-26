@@ -38,7 +38,11 @@ func editHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func saveHandler(res http.ResponseWriter, req *http.Request) {
-
+	title := req.URL.Path[len("/save/"):]
+	body := req.FormValue("body")
+	p := &wiki.Page{Title: title, Body: []byte(body)}
+	p.Save()
+	http.Redirect(res, req, "/view/"+title, http.StatusFound)
 }
 
 func Run() {
