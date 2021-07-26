@@ -9,13 +9,12 @@ import (
 	"github.com/Sheerlore/gowiki_parctice/wiki"
 )
 
+const pagePath = "../component/"
+
+var templetes = template.Must(template.ParseFiles(pagePath+"edit.html", pagePath+"view.html"))
+
 func renderTemplete(res http.ResponseWriter, tmpl string, p *wiki.Page) {
-	t, err := template.ParseFiles(tmpl + ".html")
-	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	err = t.Execute(res, p)
+	err := templetes.ExecuteTemplate(res, tmpl+".html", p)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 	}
