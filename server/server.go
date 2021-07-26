@@ -10,8 +10,15 @@ import (
 )
 
 func renderTemplete(res http.ResponseWriter, tmpl string, p *wiki.Page) {
-	t, _ := template.ParseFiles(tmpl + ".html")
-	t.Execute(res, p)
+	t, err := template.ParseFiles(tmpl + ".html")
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = t.Execute(res, p)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func indexHandler(res http.ResponseWriter, req *http.Request) {
@@ -41,7 +48,10 @@ func saveHandler(res http.ResponseWriter, req *http.Request) {
 	title := req.URL.Path[len("/save/"):]
 	body := req.FormValue("body")
 	p := &wiki.Page{Title: title, Body: []byte(body)}
-	p.Save()
+	err := p.Save()
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+	}
 	http.Redirect(res, req, "/view/"+title, http.StatusFound)
 }
 
