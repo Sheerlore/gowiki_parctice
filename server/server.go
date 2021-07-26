@@ -1,10 +1,12 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"regexp"
 
 	"github.com/Sheerlore/gowiki_parctice/wiki"
 )
@@ -12,6 +14,7 @@ import (
 const pagePath = "../component/"
 
 var templetes = template.Must(template.ParseFiles(pagePath+"edit.html", pagePath+"view.html"))
+var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
 func renderTemplete(res http.ResponseWriter, tmpl string, p *wiki.Page) {
 	err := templetes.ExecuteTemplate(res, tmpl+".html", p)
@@ -20,27 +23,42 @@ func renderTemplete(res http.ResponseWriter, tmpl string, p *wiki.Page) {
 	}
 }
 
+func getTitle(res http.ResponseWriter, req *http.Request) (string, error) {
+	m := validPath.FindStringSubmatch(req.URL.Path)
+	if m == nil {
+		http.NotFound(res, req)
+		return "", errors.New("invaild Page Title")
+	}
+	return m[2], nil // the title is seconde subexpression.
+}
+
 func indexHandler(res http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(res, "Hello World!")
 }
 
 func viewHandler(res http.ResponseWriter, req *http.Request) {
-	title := req.URL.Path[len("/view/"):]
+	title, err := getTitle(res, req)
+	if err != nil {
+		return
+	}
 	p, err := wiki.LoadPage(title)
 	if err != nil {
 		http.Redirect(res, req, "/edit/"+title, http.StatusFound)
 		return
 	}
-	renderTemplete(res, "../component/view", p)
+	renderTemplete(res, pagePath+"view", p)
 }
 
 func editHandler(res http.ResponseWriter, req *http.Request) {
-	title := req.URL.Path[len("/edit/"):]
+	title, err := getTitle(res, req)
+	if err != nil {
+		return
+	}
 	p, err := wiki.LoadPage(title)
 	if err != nil {
 		p = &wiki.Page{Title: title}
 	}
-	renderTemplete(res, "../component/edit", p)
+	renderTemplete(res, pagePath+"edit", p)
 }
 
 func saveHandler(res http.ResponseWriter, req *http.Request) {
