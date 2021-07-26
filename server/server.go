@@ -20,7 +20,11 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 
 func viewHandler(res http.ResponseWriter, req *http.Request) {
 	title := req.URL.Path[len("/view/"):]
-	p, _ := wiki.LoadPage(title)
+	p, err := wiki.LoadPage(title)
+	if err != nil {
+		http.Redirect(res, req, "/edit/"+title, http.StatusFound)
+		return
+	}
 	renderTemplete(res, "../component/view", p)
 }
 
